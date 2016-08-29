@@ -28,6 +28,7 @@ igtl::ConditionVariable::Pointer conditionVar;
 igtl::SimpleMutexLock * localMutex;
 int frameNum = 0;
 igtl::PolyDataPointArray::Pointer pointsArray;
+bool receivedData = false;
 
 bool ReceivePolyDataStream(igtl::Socket * socket, igtl::MessageHeader::Pointer header)
 {
@@ -63,13 +64,14 @@ bool ReceivePolyDataStream(igtl::Socket * socket, igtl::MessageHeader::Pointer h
   }
  
   // Points
-  igtl::PolyDataPointArray::Pointer pointsArray = polyDataMsg->GetPoints();
+  pointsArray = polyDataMsg->GetPoints();
   int npoints = pointsArray->GetNumberOfPoints();
   if (npoints > 0)
   {
     for (int i = 0; i < npoints; i ++)
     {
       igtlFloat32 point[3];
+	  
       pointsArray->GetPoint(i, point);
     }
   }
@@ -184,6 +186,7 @@ void ConnectionThread()
   igtl::TimeStamp::Pointer ts;
   ts = igtl::TimeStamp::New();
 
+
   while (1)
   {
     // Initialize receive buffer
@@ -218,6 +221,8 @@ void ConnectionThread()
       bool success = ReceivePolyDataStream(socket, headerMsg);
       if (success)
       {
+		  receivedData = true;
+		  conditionVar->Signal();
       }
     }
     else
@@ -241,7 +246,7 @@ int StartClient()
   pointsArray = igtl::PolyDataPointArray::New();
   igtlFloat32 * point0 = new igtlFloat32[3];
   point0[0] = 5; point0[1] = 5; point0[2] = 5;
-  pointsArray->SetPoint(0, point0);
+  //pointsArray->SetPoint(0, point0);
   // Create a mapper
 
   igtl::MultiThreader::Pointer threadViewer = igtl::MultiThreader::New();

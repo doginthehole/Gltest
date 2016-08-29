@@ -100,6 +100,13 @@ SimpleRenderer::SimpleRenderer(bool isHolographic) :
     mDrawCount(0)
 {
 	StartClient();
+	localMutex->Lock();
+	while (!receivedData)
+	{
+		conditionVar->Wait(localMutex);
+		igtl::Sleep(100);
+	}
+	localMutex->Unlock();
     // Vertex Shader source
     const std::string vs = isHolographic ?
         STRING
@@ -170,7 +177,37 @@ SimpleRenderer::SimpleRenderer(bool isHolographic) :
     float halfWidth = isHolographic ? 0.1f : 0.5f;
 	float pos[3] = { 0 };
 	pointsArray->GetPoint(0, pos);
-    GLfloat vertexPositions[] =
+	int numPoints = pointsArray->GetNumberOfPoints();
+	numPoints = 8;
+
+	GLfloat* vertexPositions = new GLfloat[3 * numPoints];
+	GLfloat* vertexColors = new GLfloat[3 * numPoints];
+	short* indices = new short[3 * numPoints];
+	GLfloat centerPos[3] = {0,0,0};
+	for (int i = 0; i < numPoints; i++) {
+		pointsArray->GetPoint(i, pos);
+		centerPos[0] += pos[0];
+		centerPos[1] += pos[1];
+		centerPos[2] += pos[2];
+	}
+	centerPos[0] /= numPoints;
+	centerPos[1] /= numPoints;
+	centerPos[2] /= numPoints;
+	for (int i = 0; i < numPoints; i++) {
+		pointsArray->GetPoint(i, pos);
+		vertexPositions[3 * i] = pos[0]-centerPos[0];
+		vertexPositions[3 * i + 1] = pos[1] - centerPos[1];
+		vertexPositions[3 * i + 2] = pos[2] - centerPos[2];
+		vertexColors[3 * i] = 1;
+		vertexColors[3 * i + 1] = 1;
+		vertexColors[3 * i + 2] = 1;
+		indices[3 * i] = round((float) rand() / (float) RAND_MAX * numPoints);
+		indices[3 * i + 1] = round((float)rand() / (float)RAND_MAX * numPoints);
+		indices[3 * i + 2] = round((float)rand() / (float)RAND_MAX * numPoints);
+	};
+
+	
+    GLfloat vertexPositionstemp[] =
     {
 		pos[0],pos[1],pos[2],
         -halfWidth, -halfWidth,  halfWidth,
@@ -181,28 +218,18 @@ SimpleRenderer::SimpleRenderer(bool isHolographic) :
          halfWidth,  halfWidth, -halfWidth,
          halfWidth,  halfWidth,  halfWidth,
     };
-
+	int temp3 = sizeof(GLfloat);
     glGenBuffers(1, &mVertexPositionBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, mVertexPositionBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*numPoints*3, vertexPositions, GL_STATIC_DRAW);
 
-    GLfloat vertexColors[] =
-    {
-        0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 1.0f,
-        1.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f,
-        1.0f, 1.0f, 1.0f,
-    };
+    
 
     glGenBuffers(1, &mVertexColorBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, mVertexColorBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexColors), vertexColors, GL_STATIC_DRAW);
-
-    short indices[] =
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*numPoints * 3, vertexColors, GL_STATIC_DRAW);
+	
+    short indicestemp[] =
     {
         0, 1, 2, // -x
         1, 3, 2,
@@ -222,16 +249,17 @@ SimpleRenderer::SimpleRenderer(bool isHolographic) :
         1, 7, 3, // +z
         1, 5, 7,
     };
-
+	int temp = sizeof(indices);
+	int temp2 = sizeof(indicestemp);
     glGenBuffers(1, &mIndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indicestemp), indicestemp, GL_STATIC_DRAW);
+	
     float renderTargetArrayIndices[] = { 0.f, 1.f };
     glGenBuffers(1, &mRenderTargetArrayIndices);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mRenderTargetArrayIndices);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(renderTargetArrayIndices), renderTargetArrayIndices, GL_STATIC_DRAW);
-
+	
     mIsHolographic = isHolographic;
 }
 
