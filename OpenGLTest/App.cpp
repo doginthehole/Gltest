@@ -111,7 +111,8 @@ void App::RecreateRenderer()
 {
     if (!mCubeRenderer)
     {
-        if (mHolographicSpace != nullptr)
+		if (mHolographicSpace != nullptr)
+        //if (1/*mHolographicSpace != nullptr*/)
         {
             mCubeRenderer.reset(new SimpleRenderer(true));
         }

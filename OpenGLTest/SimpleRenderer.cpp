@@ -5,6 +5,11 @@
 #include "pch.h"
 #include "SimpleRenderer.h"
 #include "MathHelper.h"
+#include "vtkRenderer.h"
+#include "vtkPolyData.h"
+#include "vtkPolygon.h"
+#include "vtkPoints.h"
+#include "vtkCell.h"
 
 // These are used by the shader compilation methods.
 #include <vector>
@@ -176,15 +181,19 @@ SimpleRenderer::SimpleRenderer(bool isHolographic) :
     // Then set up the cube geometry.
     float halfWidth = isHolographic ? 0.1f : 0.5f;
 	float pos[3] = { 0 };
+	std::list<igtlUint32> cell(3,0);
 	pointsArray->GetPoint(0, pos);
 	int numPoints = pointsArray->GetNumberOfPoints();
-	numPoints = 8;
+	int numPolys = polygonsArray->GetNumberOfCells();
 
 	GLfloat* vertexPositions = new GLfloat[3 * numPoints];
 	GLfloat* vertexColors = new GLfloat[3 * numPoints];
-	short* indices = new short[3 * numPoints];
+	short* indices = new short[3 * numPolys];
 	GLfloat centerPos[3] = {0,0,0};
+	
+
 	for (int i = 0; i < numPoints; i++) {
+
 		pointsArray->GetPoint(i, pos);
 		centerPos[0] += pos[0];
 		centerPos[1] += pos[1];
@@ -194,66 +203,49 @@ SimpleRenderer::SimpleRenderer(bool isHolographic) :
 	centerPos[1] /= numPoints;
 	centerPos[2] /= numPoints;
 	for (int i = 0; i < numPoints; i++) {
+
 		pointsArray->GetPoint(i, pos);
 		vertexPositions[3 * i] = pos[0]-centerPos[0];
 		vertexPositions[3 * i + 1] = pos[1] - centerPos[1];
-		vertexPositions[3 * i + 2] = pos[2] - centerPos[2];
+		vertexPositions[3 * i + 2] = pos[2] - centerPos[2] - 80;
 		vertexColors[3 * i] = 1;
 		vertexColors[3 * i + 1] = 1;
 		vertexColors[3 * i + 2] = 1;
-		indices[3 * i] = round((float) rand() / (float) RAND_MAX * numPoints);
-		indices[3 * i + 1] = round((float)rand() / (float)RAND_MAX * numPoints);
-		indices[3 * i + 2] = round((float)rand() / (float)RAND_MAX * numPoints);
 	};
 
-	
-    GLfloat vertexPositionstemp[] =
-    {
-		pos[0],pos[1],pos[2],
-        -halfWidth, -halfWidth,  halfWidth,
-        -halfWidth,  halfWidth, -halfWidth,
-        -halfWidth,  halfWidth,  halfWidth,
-         halfWidth, -halfWidth, -halfWidth,
-         halfWidth, -halfWidth,  halfWidth,
-         halfWidth,  halfWidth, -halfWidth,
-         halfWidth,  halfWidth,  halfWidth,
-    };
+	std::list<igtlUint32>::iterator iter;
+	for(int i = 0; i< numPolys;i++)
+	{
+		glClearColor(1.0f, 1.f, 0.f, 0.f);
+
+		polygonsArray->GetCell(i, cell);
+		int j = 0;
+		for (iter = cell.begin(); iter != cell.end(); iter++)
+		{
+			indices[3 * i +j] = *iter;
+			j++;
+		}
+
+	}
+
+
+	//point buffer
 	int temp3 = sizeof(GLfloat);
     glGenBuffers(1, &mVertexPositionBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, mVertexPositionBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*numPoints*3, vertexPositions, GL_STATIC_DRAW);
 
     
-
+	//color buffer
     glGenBuffers(1, &mVertexColorBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, mVertexColorBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*numPoints * 3, vertexColors, GL_STATIC_DRAW);
 	
-    short indicestemp[] =
-    {
-        0, 1, 2, // -x
-        1, 3, 2,
 
-        4, 6, 5, // +x
-        5, 6, 7,
-
-        0, 5, 1, // -y
-        0, 4, 5,
-
-        2, 7, 6, // +y
-        2, 3, 7,
-              
-        0, 6, 4, // -z
-        0, 2, 6,
-              
-        1, 7, 3, // +z
-        1, 5, 7,
-    };
-	int temp = sizeof(indices);
-	int temp2 = sizeof(indicestemp);
+	//index buffer
     glGenBuffers(1, &mIndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indicestemp), indicestemp, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices)*numPolys*3, indices, GL_STATIC_DRAW);
 	
     float renderTargetArrayIndices[] = { 0.f, 1.f };
     glGenBuffers(1, &mRenderTargetArrayIndices);
@@ -295,7 +287,7 @@ void SimpleRenderer::Draw()
     glEnable(GL_DEPTH_TEST);
 
     // On HoloLens, it is important to clear to transparent.
-    glClearColor(0.0f, 0.f, 0.f, 0.f);
+    //glClearColor(1.0f, 1.f, 0.f, 0.f);
 
     // On HoloLens, this will also update the camera buffers (constant and back).
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -314,7 +306,7 @@ void SimpleRenderer::Draw()
     glVertexAttribPointer(mColorAttribLocation, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
     MathHelper::Vec3 position = MathHelper::Vec3(0.f, 0.f, -2.f);
-    MathHelper::Matrix4 modelMatrix = MathHelper::SimpleModelMatrix((float)mDrawCount / 50.0f, position);
+    MathHelper::Matrix4 modelMatrix = MathHelper::SimpleModelMatrix((float)mDrawCount / 10000000000.1f, position); // This float controls the rotation speed (higher is slower)
     glUniformMatrix4fv(mModelUniformLocation, 1, GL_FALSE, &(modelMatrix.m[0][0]));
 
     if (mIsHolographic)
@@ -329,19 +321,19 @@ void SimpleRenderer::Draw()
 
         // Draw 36 indices: six faces, two triangles per face, 3 indices per triangle
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-        glDrawElementsInstancedANGLE(GL_TRIANGLES, (6 * 2) * 3, GL_UNSIGNED_SHORT, 0, 2);
+        glDrawElementsInstancedANGLE(GL_TRIANGLES, (polygonsArray->GetNumberOfCells()) * 3, GL_UNSIGNED_SHORT, 0, 2);
     }
     else
     {
-        MathHelper::Matrix4 viewMatrix = MathHelper::SimpleViewMatrix();
+		MathHelper::Matrix4 viewMatrix = MathHelper::SimpleViewMatrix();
         glUniformMatrix4fv(mViewUniformLocation, 1, GL_FALSE, &(viewMatrix.m[0][0]));
 
         MathHelper::Matrix4 projectionMatrix = MathHelper::SimpleProjectionMatrix(float(mWindowWidth) / float(mWindowHeight));
         glUniformMatrix4fv(mProjUniformLocation, 1, GL_FALSE, &(projectionMatrix.m[0][0]));
 
-        // Draw 36 indices: six faces, two triangles per face, 3 indices per triangle
+        // Draw the number of indices in the object
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-        glDrawElements(GL_TRIANGLES, (6 * 2) * 3, GL_UNSIGNED_SHORT, 0);
+		glDrawElements(GL_TRIANGLES, (polygonsArray->GetNumberOfCells()) * 3, GL_UNSIGNED_SHORT, 0);
     }
 
     mDrawCount += 1;

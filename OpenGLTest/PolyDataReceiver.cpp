@@ -22,12 +22,19 @@
 #include "igtlMultiThreader.h"
 #include "igtlConditionVariable.h"
 #include "igtlTimeStamp.h"
+#include "vtkRenderer.h"
+#include "vtkPolyData.h"
+#include "vtkPolygon.h"
+#include "vtkPoints.h"
+#include "vtkCell.h"
 
 bool interactionActive;
 igtl::ConditionVariable::Pointer conditionVar;
 igtl::SimpleMutexLock * localMutex;
 int frameNum = 0;
 igtl::PolyDataPointArray::Pointer pointsArray;
+igtl::PolyDataCellArray::Pointer polygonsArray;
+
 bool receivedData = false;
 
 bool ReceivePolyDataStream(igtl::Socket * socket, igtl::MessageHeader::Pointer header)
@@ -115,7 +122,7 @@ bool ReceivePolyDataStream(igtl::Socket * socket, igtl::MessageHeader::Pointer h
   }
   
   // Polygons
-  igtl::PolyDataCellArray::Pointer polygonsArray = polyDataMsg->GetPolygons();
+  polygonsArray = polyDataMsg->GetPolygons();
   int npolygons = polygonsArray.IsNotNull() ? polygonsArray->GetNumberOfCells() : 0;
   if (npolygons > 0)
   {
@@ -130,6 +137,7 @@ bool ReceivePolyDataStream(igtl::Socket * socket, igtl::MessageHeader::Pointer h
         j++;
       }
     }
+	
   }
   
   // Triangle Strips
@@ -160,7 +168,7 @@ bool ReceivePolyDataStream(igtl::Socket * socket, igtl::MessageHeader::Pointer h
 
 void ConnectionThread()
 {
-  char*  hostname = "localhost"; //10.22.177.20
+  char*  hostname = "localhost"; //			10.22.176.84				/////////////////////////////////////////////////////
   int    port     = 18944;
   
   //------------------------------------------------------------
