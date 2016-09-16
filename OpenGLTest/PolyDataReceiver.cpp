@@ -78,7 +78,6 @@ bool ReceivePolyDataStream(igtl::Socket * socket, igtl::MessageHeader::Pointer h
     for (int i = 0; i < npoints; i ++)
     {
       igtlFloat32 point[3];
-	  
       pointsArray->GetPoint(i, point);
     }
   }
@@ -87,43 +86,44 @@ bool ReceivePolyDataStream(igtl::Socket * socket, igtl::MessageHeader::Pointer h
     // ERROR: No points defined
   }
   
-  // Vertices
-  igtl::PolyDataCellArray::Pointer verticesArray =  polyDataMsg->GetVertices();
-  int nvertices = verticesArray.IsNotNull() ? verticesArray->GetNumberOfCells() : 0;
-  if (nvertices > 0)
-  {
-    for (int i = 0; i < nvertices; i ++)
-    {
-      
-      std::list<igtlUint32> cell;
-      verticesArray->GetCell(i, cell);
-      std::list<igtlUint32>::iterator iter;
-      iter = cell.begin();
-    }
-  }
-  
-  // Lines
-  igtl::PolyDataCellArray::Pointer linesArray = polyDataMsg->GetLines();
-  int nlines = linesArray.IsNotNull() ? linesArray->GetNumberOfCells() : 0;
-  if (nlines > 0)
-  {
-    for(int i = 0; i < nlines; i++)
-    {
-      
-      std::list<igtlUint32> cell;
-      linesArray->GetCell(i, cell);
-      std::list<igtlUint32>::iterator iter;
-      int j = 0;
-      for (iter = cell.begin(); iter != cell.end(); iter ++)
-      {
-        j++;
-      }
-    }
-  }
+  //// Vertices
+  //igtl::PolyDataCellArray::Pointer verticesArray =  polyDataMsg->GetVertices();
+  //int nvertices = verticesArray.IsNotNull() ? verticesArray->GetNumberOfCells() : 0;
+  //if (nvertices > 0)
+  //{
+  //  for (int i = 0; i < nvertices; i ++)
+  //  {
+		//glClearColor(1.0f, 1.f, 0.f, 0.f);
+  //    std::list<igtlUint32> cell;
+  //    verticesArray->GetCell(i, cell);
+  //    std::list<igtlUint32>::iterator iter;
+  //    iter = cell.begin();
+  //  }
+  //}
+  //
+  //// Lines
+  //igtl::PolyDataCellArray::Pointer linesArray = polyDataMsg->GetLines();
+  //int nlines = linesArray.IsNotNull() ? linesArray->GetNumberOfCells() : 0;
+  //if (nlines > 0)
+  //{
+  //  for(int i = 0; i < nlines; i++)
+  //  {
+  //    
+  //    std::list<igtlUint32> cell;
+  //    linesArray->GetCell(i, cell);
+  //    std::list<igtlUint32>::iterator iter;
+  //    int j = 0;
+  //    for (iter = cell.begin(); iter != cell.end(); iter ++)
+  //    {
+  //      j++;
+  //    }
+  //  }
+  //}
   
   // Polygons
   polygonsArray = polyDataMsg->GetPolygons();
   int npolygons = polygonsArray.IsNotNull() ? polygonsArray->GetNumberOfCells() : 0;
+  //int npolygons = polygonsArray->GetNumberOfCells();
   if (npolygons > 0)
   {
     for(int i = 0; i < npolygons; i++)
@@ -137,26 +137,25 @@ bool ReceivePolyDataStream(igtl::Socket * socket, igtl::MessageHeader::Pointer h
         j++;
       }
     }
-	
   }
   
   // Triangle Strips
-  igtl::PolyDataCellArray::Pointer triangleStripsArray = polyDataMsg->GetTriangleStrips();
-  int ntstrips = triangleStripsArray.IsNotNull() ? triangleStripsArray->GetNumberOfCells() : 0;
-  if (ntstrips > 0)
-  {
-    for(int i = 0; i < ntstrips; i++)
-    {
-      std::list<igtlUint32> cell;
-      triangleStripsArray->GetCell(i, cell);
-      std::list<igtlUint32>::iterator iter;
-      int j = 0;
-      for (iter = cell.begin(); iter != cell.end(); iter ++)
-      {
-        j++;
-      }
-    }
-  }
+  //igtl::PolyDataCellArray::Pointer triangleStripsArray = polyDataMsg->GetTriangleStrips();
+  //int ntstrips = triangleStripsArray.IsNotNull() ? triangleStripsArray->GetNumberOfCells() : 0;
+  //if (ntstrips > 0)
+  //{
+  //  for(int i = 0; i < ntstrips; i++)
+  //  {
+  //    std::list<igtlUint32> cell;
+  //    triangleStripsArray->GetCell(i, cell);
+  //    std::list<igtlUint32>::iterator iter;
+  //    int j = 0;
+  //    for (iter = cell.begin(); iter != cell.end(); iter ++)
+  //    {
+  //      j++;
+  //    }
+  //  }
+  //}
 
   // Points RGB
   //std::vector<igtlUint8> pointsRGB = polyDataMsg->GetPointsRGB();
@@ -168,8 +167,8 @@ bool ReceivePolyDataStream(igtl::Socket * socket, igtl::MessageHeader::Pointer h
 
 void ConnectionThread()
 {
-  char*  hostname = "localhost"; //			10.22.176.84				/////////////////////////////////////////////////////
-  int    port     = 18944;
+  char*  hostname = "localhost"; //	 	10.22.177.250					/////////////////////////////////////////////////////
+  int    port     = 18944;			//
   
   //------------------------------------------------------------
   // Establish Connection
@@ -262,6 +261,4 @@ int StartClient()
 
   threadViewer->SpawnThread((igtl::ThreadFunctionType) &ConnectionThread, NULL);
   return 1;
-
 }
-

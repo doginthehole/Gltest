@@ -179,19 +179,32 @@ SimpleRenderer::SimpleRenderer(bool isHolographic) :
     mProjUniformLocation = glGetUniformLocation(mProgram, "uProjMatrix");
 
     // Then set up the cube geometry.
-    float halfWidth = isHolographic ? 0.1f : 0.5f;
+    float halfWidth = isHolographic ? 0.1f : 0.1f;
 	float pos[3] = { 0 };
 	std::list<igtlUint32> cell(3,0);
 	pointsArray->GetPoint(0, pos);
 	int numPoints = pointsArray->GetNumberOfPoints();
-	int numPolys = polygonsArray->GetNumberOfCells();
+	int numPolys = 12;
+    numPolys = polygonsArray->GetNumberOfCells();
 
-	GLfloat* vertexPositions = new GLfloat[3 * numPoints];
-	GLfloat* vertexColors = new GLfloat[3 * numPoints];
-	short* indices = new short[3 * numPolys];
-	GLfloat centerPos[3] = {0,0,0};
 	
-
+	GLfloat* vertexColors = new GLfloat[3 * numPoints];
+	//short* indices = new short[3 * numPolys];
+	GLfloat centerPos[3] = {0,0,0};
+	numPoints = 8;
+	GLfloat vertexPositions[] =
+	{
+		-halfWidth, -halfWidth, -halfWidth,
+		-halfWidth, -halfWidth,  halfWidth,
+		-halfWidth,  halfWidth, -halfWidth,
+		-halfWidth,  halfWidth,  halfWidth,
+		halfWidth, -halfWidth, -halfWidth,
+		halfWidth, -halfWidth,  halfWidth,
+		halfWidth,  halfWidth, -halfWidth,
+		halfWidth,  halfWidth,  halfWidth,
+	};
+	/*
+	GLfloat* vertexPositions = new GLfloat[3 * numPoints];
 	for (int i = 0; i < numPoints; i++) {
 
 		pointsArray->GetPoint(i, pos);
@@ -201,34 +214,59 @@ SimpleRenderer::SimpleRenderer(bool isHolographic) :
 	}
 	centerPos[0] /= numPoints;
 	centerPos[1] /= numPoints;
-	centerPos[2] /= numPoints;
+	centerPos[2] /= numPoints;*/
 	for (int i = 0; i < numPoints; i++) {
 
 		pointsArray->GetPoint(i, pos);
 		vertexPositions[3 * i] = pos[0]-centerPos[0];
 		vertexPositions[3 * i + 1] = pos[1] - centerPos[1];
-		vertexPositions[3 * i + 2] = pos[2] - centerPos[2] - 80;
+		vertexPositions[3 * i + 2] = pos[2] - centerPos[2];
 		vertexColors[3 * i] = 1;
 		vertexColors[3 * i + 1] = 1;
 		vertexColors[3 * i + 2] = 1;
-	};
-
-	std::list<igtlUint32>::iterator iter;
-	for(int i = 0; i< numPolys;i++)
-	{
+	}
+	/*
+	if (numPolys==0)
 		glClearColor(1.0f, 1.f, 0.f, 0.f);
 
+
+	//std::list<unsigned int>::iterator iter;
+	std::list<igtlUint32>::iterator iter;
+
+	for(int i = 0; i< numPolys;i++)
+	{
 		polygonsArray->GetCell(i, cell);
 		int j = 0;
 		for (iter = cell.begin(); iter != cell.end(); iter++)
-		{
+		{		
 			indices[3 * i +j] = *iter;
 			j++;
 		}
-
 	}
+	*/
+	
 
+	short indices[] =
+	{
+		0, 1, 2, // -x
+		1, 3, 2,
 
+		4, 6, 5, // +x
+		5, 6, 7,
+
+		0, 5, 1, // -y
+		0, 4, 5,
+
+		2, 7, 6, // +y
+		2, 3, 7,
+
+		0, 6, 4, // -z
+		0, 2, 6,
+
+		1, 7, 3, // +z
+		1, 5, 7,
+	};
+	
 	//point buffer
 	int temp3 = sizeof(GLfloat);
     glGenBuffers(1, &mVertexPositionBuffer);
@@ -245,7 +283,7 @@ SimpleRenderer::SimpleRenderer(bool isHolographic) :
 	//index buffer
     glGenBuffers(1, &mIndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices)*numPolys*3, indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	
     float renderTargetArrayIndices[] = { 0.f, 1.f };
     glGenBuffers(1, &mRenderTargetArrayIndices);
